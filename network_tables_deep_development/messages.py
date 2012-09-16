@@ -120,6 +120,9 @@ class EntryAssignmentMessage(Message):
         idVal = decode_int(sock.recv(2))
         sequence_number = decode_int(sock.recv(2))
         value = decode(typeof, sock)
+
+
+        print "DEBUG: " + str((name, typeof, idVal, sequence_number, value))
         
         return (name, typeof, idVal, sequence_number, value)
 

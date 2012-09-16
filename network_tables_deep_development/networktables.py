@@ -61,7 +61,7 @@ class Entry(object):
         self._value = value
         self.type = get_type(value)
         # The next ID if it's a server, otherwise an UNDEFINED_ID.
-        if IS_SERVER and auto_id:
+        if self.MANAGER.is_server and auto_id:
             self.id = Entry.NEXT_ID
             Entry.NEXT_ID += 1
         else:
@@ -260,10 +260,11 @@ class ReadThread(object):
         "Continuously read messages over the network."
         while self.is_alive:
             x = self.sock.recv(1)
-            print [x]
+            print "Read: " + str([x])
             msg_type = decode_int(x)
             data = messages.MESSAGES[msg_type].decode(self.sock)
-            if msg_type == ENTRY_ASSIGNMENT or msg_type == ENTRY_ASSIGNMENT:
+            print "Read Data: " + str(data)
+            if msg_type == ENTRY_ASSIGNMENT or msg_type == ENTRY_UPDATE:
                 self.TABLE.lock()
                 if self.in_transaction:
                     self.add_item((msg_type, data))
@@ -309,12 +310,12 @@ class ReadThread(object):
 
     def handle_update(self, idVal, sequence_number, value):
         entry = self.TABLE.ids[idVal]
-        if (self.TABLE.MANAGER.is_server and sequence_number > entry.sequence_number):
+        if (self.TABLE.Manager.is_server and sequence_number > entry.sequence_number):
             entry.value = value
             entry.sequence_number = sequence_number
             entry.ignore = self.sock
             print("Update entry: {}={} ({})".format(entry.name, entry.value, entry.sequence_number.val))
-        elif (not(self.TABLE.MANAGER.is_server)):
+        elif (not(self.TABLE.Manager.is_server)):
             entry._value = value
             entry.dirty = False
             entry.sequence_number = sequence_number
@@ -322,44 +323,3 @@ class ReadThread(object):
             print("Update entry: {}={} ({})".format(entry.name, entry.value, entry.sequence_number.val))
         else:
             print("Rejecting update entry: {}={}".format(entry.name, value))
-
-def run_server():
-    "Run networtables in server mode."
-    try:
-        print("Starting server")
-        create_messages(TABLE, TABLE.Manager)
-        TABLE["int"] = 1
-        TABLE["foo"] = 2
-        TABLE["foobar"] = 3
-        TABLE.Manager.run(port=PORT)
-        while True:
-            TABLE["int"] += 1
-            time.sleep(1)
-    except KeyboardInterrupt as _:
-        TABLE.Manager.close_all()
-
-def run_client():
-    "Run network tables client mode."
-    try:
-        print("Starting client")
-        create_messages(TABLE, TABLE.Manager)
-        TABLE.Manager.run(port=PORT)
-        time.sleep(2)
-        while True:
-            if "test" in TABLE.entries:
-                TABLE["test"] += 1
-            else:
-                TABLE["test"] = 3
-                print len(TABLE.entries)
-            time.sleep(1)
-    except KeyboardInterrupt as _:
-        TABLE.Manager.close_all()
-
-if __name__ == "__main__":
-    import sys
-    IS_SERVER = not("client" in sys.argv)
-    TABLE = NetworkTable(IS_SERVER)
-    if IS_SERVER:
-        run_server()
-    else:
-        run_client()

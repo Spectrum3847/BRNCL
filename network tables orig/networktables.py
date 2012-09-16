@@ -257,6 +257,7 @@ class ReadThread(object):
             print [x]
             msg_type = decode_int(x)
             data = messages.MESSAGES[msg_type].decode(self.sock)
+            print "Data: "
             if msg_type == ENTRY_ASSIGNMENT or msg_type == ENTRY_ASSIGNMENT:
                 TABLE.lock()
                 if self.in_transaction:
@@ -292,6 +293,14 @@ class ReadThread(object):
         TABLE.lock() # Avoids deadlock.
         entry = TABLE.entries[name]
         entry.name = name
+        self.is_alive = False
+        self.sock.close()
+
+    def run(self):
+        "Continuously read messages over the network."
+        while self.is_alive:
+            x = self.sock.recv(1)
+            print [x]
         entry._value = value
         entry.type = typeof
         if not(MANAGER.is_server):
@@ -331,9 +340,12 @@ def run_server():
         TABLE["foo"] = 2
         TABLE["foobar"] = 3
         MANAGER.run(port=PORT)
-        #while True:
-        #    TABLE["int"] += 1
-        #    time.sleep(1)
+        while True:
+            TABLE["int"] += 1
+            print TABLE.entries
+            for x in TABLE.entries:
+                print TABLE[x]
+            time.sleep(1)
     except KeyboardInterrupt as _:
         MANAGER.close_all()
 
