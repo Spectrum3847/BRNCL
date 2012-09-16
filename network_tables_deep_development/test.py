@@ -12,7 +12,7 @@ def run_server():
         TABLE["foobar"] = 3
         TABLE.Manager.run(port=PORT)
         while True:
-            TABLE["int"] += 1
+            #TABLE["int"] += 1
             print TABLE.entries
             for x in TABLE.entries:
                 print TABLE[x]
