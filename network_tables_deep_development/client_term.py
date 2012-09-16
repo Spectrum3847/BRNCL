@@ -18,5 +18,9 @@ if __name__ == "__main__":
 			elif inps[0] == 'u':
 				print "Update item: " + x[1] + " with value: " + str(x[2])
 				table[n[1]] = n[2]
+			elif inps[0] == 'l':
+				print "List Entries:"
+				for x in table.entries:
+					print table[x]
 	except KeyboardInterrupt as _:
 		table.Manager.close_all()
